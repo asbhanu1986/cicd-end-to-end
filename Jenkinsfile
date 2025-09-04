@@ -54,18 +54,38 @@ stage('Push the artifacts'){
             }
         }
         
-        stage('Update K8S manifest & push to Repo'){
-            steps {
-                script{
-                    withCredentials([usernamePassword(credentialsId: '2b194bde-6566-4870-a21c-44547586c229', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
-                        sh '''
-                        cat deploy.yaml
-                        sed -i '' "s/32/${BUILD_NUMBER}/g" deploy.yaml
-                        cat deploy.yaml
-                        git add deploy.yaml
-                        git commit -m 'Updated the deploy yaml | Jenkins Pipeline'
-                        git remote -v
-                        git push https://github.com/asbhanu1986/cicd-demo-manifests-repo.git HEAD:main
+        stage('Update K8S manifest & push to Repo') {
+    steps {
+        script {
+            withCredentials([usernamePassword(credentialsId: '2b194bde-6566-4870-a21c-44547586c229', 
+                                             passwordVariable: 'GIT_PASSWORD', 
+                                             usernameVariable: 'GIT_USERNAME')]) {
+                sh '''
+                # Check file exists
+                if [ -f deploy/deploy.yaml ]; then
+                    echo "Before update:"
+                    cat deploy/deploy.yaml
+
+                    # Update BUILD_NUMBER
+                    sed -i "s/32/${BUILD_NUMBER}/g" deploy/deploy.yaml
+
+                    echo "After update:"
+                    cat deploy/deploy.yaml
+
+                    # Commit and push
+                    git add deploy/deploy.yaml
+                    git commit -m "Updated deploy.yaml | Jenkins Pipeline"
+                    git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/asbhanu1986/cicd-demo-manifests-repo.git HEAD:main
+                else
+                    echo "Error: deploy/deploy.yaml not found"
+                    exit 1
+                fi
+                '''
+            }
+        }
+    }
+}
+
                         '''                        
                     }
                 }
