@@ -36,36 +36,41 @@ pipeline {
             }
         }
 
-        stage('Update K8S manifest & push to Repo') {
+        stage('Update K8S manifests & push to Repo') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: '2b194bde-6566-4870-a21c-44547586c229', 
                                                      passwordVariable: 'GIT_PASSWORD', 
                                                      usernameVariable: 'GIT_USERNAME')]) {
-                        sh '''
-                        if [ -f deploy/deploy.yaml ]; then
-                            echo "Before update:"
-                            cat deploy/deploy.yaml
+                        sh """
+                        set -e
+                        for file in deploy/deploy.yaml deploy/pod.yaml; do
+                            if [ -f \$file ]; then
+                                echo "Before update: \$file"
+                                cat \$file
 
-                            # Update BUILD_NUMBER
-                            sed -i "s|v[0-9]\+|v${BUILD_NUMBER}|g" deploy/deploy.yaml
+                                # Update image version
+                                sed -i "s|v[0-9]\\+|v${BUILD_NUMBER}|g" \$file
 
+                                echo "After update: \$file"
+                                cat \$file
+                            else
+                                echo "Warning: \$file not found"
+                            fi
+                        done
 
-                            echo "After update:"
-                            cat deploy/deploy.yaml
-
-                            # Commit and push changes
-                            git add deploy/deploy.yaml
-                            git commit -m "Updated deploy.yaml | Jenkins Pipeline"
+                        # Commit only if there are changes
+                        git add deploy/deploy.yaml deploy/pod.yaml || true
+                        if ! git diff --cached --quiet; then
+                            git commit -m "Updated manifests | Jenkins build ${BUILD_NUMBER}"
                             git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/asbhanu1986/cicd-demo-manifests-repo.git HEAD:main
                         else
-                            echo "Error: deploy/deploy.yaml not found"
-                            exit 1
+                            echo "No changes to commit"
                         fi
-                        '''
+                        """
                     }
                 }
             }
         }
     }
-} // <-- Added this closing brace for the pipeline
+}
