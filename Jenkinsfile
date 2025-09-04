@@ -27,16 +27,24 @@ pipeline {
             }
         }
 
-        stage('Push the artifacts'){
-           steps{
-                script{
-                    sh '''
-                    echo 'Push to Repo'
-                    docker push asbhanu1986/cicd-e2e:${BUILD_NUMBER}
-                    '''
-                }
+stage('Push the artifacts'){
+    steps {
+        script {
+            withCredentials([usernamePassword(
+                credentialsId: 'dockerhub-creds',   // 👈 ID of your DockerHub credentials in Jenkins
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )]) {
+                sh '''
+                echo 'Login to DockerHub'
+                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                echo 'Push to Repo'
+                docker push asbhanu1986/cicd-e2e:${BUILD_NUMBER}
+                '''
             }
         }
+    }
+}
         
         stage('Checkout K8S manifest SCM'){
             steps {
