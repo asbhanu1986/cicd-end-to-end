@@ -66,5 +66,5 @@ pipeline {
                 }
             }
         }
-    } // closes stages
-} // closes pipeline
+    }
+} // <-- Added this closing brace for the pipeline
