@@ -48,7 +48,8 @@ pipeline {
                             cat deploy/deploy.yaml
 
                             # Update BUILD_NUMBER
-                            sed -i "s/32/${BUILD_NUMBER}/g" deploy/deploy.yaml
+                            sed -i "s|v[0-9]\+|v${BUILD_NUMBER}|g" deploy/deploy.yaml
+
 
                             echo "After update:"
                             cat deploy/deploy.yaml
